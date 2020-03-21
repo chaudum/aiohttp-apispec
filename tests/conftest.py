@@ -2,16 +2,16 @@ import pytest
 from aiohttp import web
 from marshmallow import Schema, fields
 
-from aiohttp_apispec import (
+from flask_apispec import (
+    cookies_schema,
     docs,
-    request_schema,
+    headers_schema,
+    json_schema,
     match_info_schema,
     querystring_schema,
-    json_schema,
-    headers_schema,
-    cookies_schema,
+    request_schema,
     response_schema,
-    setup_aiohttp_apispec,
+    setup_flask_apispec,
     validation_middleware,
 )
 
@@ -155,7 +155,7 @@ def aiohttp_app(loop, aiohttp_client, request):
     app = web.Application()
     if nested:
         v1 = web.Application()
-        setup_aiohttp_apispec(
+        setup_flask_apispec(
             app=v1,
             title="API documentation",
             version="0.0.1",
@@ -179,7 +179,7 @@ def aiohttp_app(loop, aiohttp_client, request):
         v1.middlewares.extend([intercept_error, validation_middleware])
         app.add_subapp("/v1/", v1)
     else:
-        setup_aiohttp_apispec(
+        setup_flask_apispec(
             app=app, url="/v1/api/docs/api-docs", error_callback=my_error_handler
         )
         app.router.add_routes(

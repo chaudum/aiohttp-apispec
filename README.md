@@ -51,10 +51,10 @@ pip install aiohttp-apispec
 *Also you can read [blog post](https://dmax.blog/how_to_easily_build_modern_web_apis_with_python_and_aiohttp) about quickstart with aiohttp-apispec*
 
 ```Python
-from aiohttp_apispec import (
+from flask_apispec import (
     docs,
     request_schema,
-    setup_aiohttp_apispec,
+    setup_flask_apispec,
 )
 from aiohttp import web
 from marshmallow import Schema, fields
@@ -78,7 +78,7 @@ app = web.Application()
 app.router.add_post("/v1/test", index)
 
 # init docs with all parameters, usual for ApiSpec
-setup_aiohttp_apispec(
+setup_flask_apispec(
     app=app, 
     title="My Documentation", 
     version="v1",
@@ -134,7 +134,7 @@ async def index(request):
 ## Adding validation middleware
 
 ```Python
-from aiohttp_apispec import validation_middleware
+from flask_apispec import validation_middleware
 
 ...
 
@@ -160,10 +160,10 @@ async def index(request):
 
 
 You can change ``Request``'s ``'data'`` param to another with ``request_data_name`` argument of 
-``setup_aiohttp_apispec`` function:
+``setup_flask_apispec`` function:
 
 ```python
-setup_aiohttp_apispec(
+setup_flask_apispec(
     app=app,
     request_data_name="validated_data",
 )
@@ -251,7 +251,7 @@ def my_error_handler(
             content_type="application/json",
         )
 
-setup_aiohttp_apispec(app, error_callback=my_error_handler)
+setup_flask_apispec(app, error_callback=my_error_handler)
 ```
 Also you can create your own exceptions and create 
 regular Request in middleware like so:
@@ -277,7 +277,7 @@ async def intercept_error(request, handler):
         return web.json_response(e.message, status=400)
 
 
-setup_aiohttp_apispec(app, error_callback=my_error_handler)
+setup_flask_apispec(app, error_callback=my_error_handler)
 
 # Do not forget to add your own middleware before validation_middleware
 app.middlewares.extend([intercept_error, validation_middleware])
@@ -287,12 +287,12 @@ app.middlewares.extend([intercept_error, validation_middleware])
 
 #### 3.X SwaggerUI version
 
-Just add `swagger_path` parameter to `setup_aiohttp_apispec` function.
+Just add `swagger_path` parameter to `setup_flask_apispec` function.
 
 For example:
 
 ```python
-setup_aiohttp_apispec(app, swagger_path="/docs")
+setup_flask_apispec(app, swagger_path="/docs")
 ```
 
 Then go to `/docs` and see awesome SwaggerUI
@@ -302,16 +302,16 @@ Then go to `/docs` and see awesome SwaggerUI
 If you prefer older version you can use 
 [aiohttp_swagger](https://github.com/cr0hn/aiohttp-swagger) library.
 `aiohttp-apispec` adds `swagger_dict` parameter to aiohttp web application 
-after initialization (with `setup_aiohttp_apispec` function). 
+after initialization (with `setup_flask_apispec` function). 
 So you can use it easily like:
 
 ```Python
-from aiohttp_apispec import setup_aiohttp_apispec
+from flask_apispec import setup_flask_apispec
 from aiohttp_swagger import setup_swagger
 
 
 def create_app(app):
-    setup_aiohttp_apispec(app)
+    setup_flask_apispec(app)
 
     async def swagger(app):
         setup_swagger(

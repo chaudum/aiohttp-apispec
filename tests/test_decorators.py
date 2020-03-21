@@ -1,8 +1,8 @@
 import pytest
 from aiohttp import web
-from marshmallow import fields, Schema
+from marshmallow import Schema, fields
 
-from aiohttp_apispec import docs, request_schema, response_schema
+from flask_apispec import docs, request_schema, response_schema
 
 
 class RequestSchema(Schema):

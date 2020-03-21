@@ -8,7 +8,7 @@ def read(file_name):
 
 
 setup(
-    name='aiohttp-apispec',
+    name='flask-apispec',
     version='2.2.1',
     description='Build and document REST APIs with aiohttp and apispec',
     long_description=read('README.md'),
@@ -16,13 +16,13 @@ setup(
     author='Danilchenko Maksim',
     author_email='dmax.dev@gmail.com',
     packages=find_packages(exclude=('test*',)),
-    package_dir={'aiohttp_apispec': 'aiohttp_apispec'},
+    package_dir={'flask_apispec': 'flask_apispec'},
     include_package_data=True,
     install_requires=read('requirements.txt').split(),
     license='MIT',
-    url='https://github.com/maximdanilchenko/aiohttp-apispec',
+    url='https://github.com/crate/flask-apispec',
     zip_safe=False,
-    keywords='aiohttp marshmallow apispec swagger',
+    keywords='flask marshmallow apispec swagger',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',

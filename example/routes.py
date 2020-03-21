@@ -1,9 +1,8 @@
 # routes.py
-from aiohttp import web
+from flask import Flask
 
-from .views import create_user, get_users
+from .views import users
 
 
-def setup_routes(app: web.Application):
-    app.router.add_get("/users", get_users)
-    app.router.add_post("/users", create_user)
+def setup_routes(app: Flask):
+    app.register_blueprint(users, url_prefix="/users")

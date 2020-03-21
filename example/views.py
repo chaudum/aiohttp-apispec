@@ -1,11 +1,12 @@
 # views.py
-from aiohttp import web
+from flask import jsonify, request, current_app, g, Blueprint
 
-from aiohttp_apispec import docs
-
-from aiohttp_apispec.decorators import json_schema, headers_schema, querystring_schema
+from flask_apispec import docs
+from flask_apispec.decorators import json_schema, headers_schema, querystring_schema
 
 from .schemas import Message, User, UsersList
+
+users = Blueprint("users", __name__)
 
 
 @docs(
@@ -18,8 +19,25 @@ from .schemas import Message, User, UsersList
         500: {"description": "Server error"},
     },
 )
-async def get_users(request: web.Request):
-    return web.json_response({"users": request.app["users"]})
+@users.route("/", methods=["GET"])
+def get_users():
+    return jsonify(items=current_app.users)
+
+
+@docs(
+    tags=["users"],
+    summary="Get user",
+    description="Get single user from our toy database",
+    responses={
+        200: {"description": "Ok. User", "schema": User},
+        404: {"description": "Not Found"},
+        500: {"description": "Server error"},
+    },
+)
+@users.route("/<int:id>/", methods=["GET"])
+def get_user(id: int):
+    users = [u for u in current_app.users if u["id"] == id]
+    return jsonify(users[0])
 
 
 @docs(
@@ -27,20 +45,14 @@ async def get_users(request: web.Request):
     summary="Create new user",
     description="Add new user to our toy database",
     responses={
-        200: {"description": "Ok. User created", "schema": Message},
+        200: {"description": "Ok. User created", "schema": User},
         401: {"description": "Unauthorized"},
         422: {"description": "Validation error"},
         500: {"description": "Server error"},
     },
 )
-@headers_schema(Message)
-@json_schema(UsersList)
-@querystring_schema(User)
-async def create_user(request: web.Request):
-    print(request["headers"])
-    print(request["json"])
-    print(request["querystring"])
-    print(request["data"])
-    new_user = request["querystring"]
-    request.app["users"].append(new_user)
-    return web.json_response({"message": f"Hello {new_user['name']}!"})
+@json_schema(User)
+@users.route("/", methods=["POST"])
+def create_user():
+    current_app.users.append(g.json)
+    return g.json

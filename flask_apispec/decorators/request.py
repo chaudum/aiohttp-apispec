@@ -22,7 +22,7 @@ def request_schema(schema, locations=None, put_into=None, **kwargs):
 
         @request_schema(RequestSchema(strict=True))
         async def index(request):
-            # aiohttp_apispec_middleware should be used for it
+            # flask_apispec_middleware should be used for it
             data = request['data']
             return web.json_response({'name': data['name'],
                                       'id': data['id']})
@@ -62,8 +62,9 @@ def request_schema(schema, locations=None, put_into=None, **kwargs):
             if any(body_schema_exists):
                 raise RuntimeError("Multiple body parameters are not allowed")
 
-        func.__schemas__.append({"schema": schema, "locations": locations, "put_into": put_into})
-
+        func.__schemas__.append(
+            {"schema": schema, "locations": locations, "put_into": put_into}
+        )
         return func
 
     return wrapper
@@ -74,14 +75,10 @@ use_kwargs = request_schema
 
 # Decorators for specific request data validations (shortenings)
 match_info_schema = partial(
-    request_schema,
-    locations=["match_info"],
-    put_into="match_info"
+    request_schema, locations=["match_info"], put_into="match_info"
 )
 querystring_schema = partial(
-    request_schema,
-    locations=["querystring"],
-    put_into="querystring"
+    request_schema, locations=["querystring"], put_into="querystring"
 )
 form_schema = partial(request_schema, locations=["form"], put_into="form")
 json_schema = partial(request_schema, locations=["json"], put_into="json")

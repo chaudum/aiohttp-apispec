@@ -8,10 +8,10 @@ Quickstart
 
 .. code-block:: python
 
-    from aiohttp_apispec import (docs,
+    from flask_apispec import (docs,
                                  request_schema,
                                  response_schema,
-                                 setup_aiohttp_apispec)
+                                 setup_flask_apispec)
     from aiohttp import web
     from marshmallow import Schema, fields
 
@@ -56,7 +56,7 @@ Quickstart
     app.router.add_view('/v1/view', TheView)
 
     # init docs with all parameters, usual for ApiSpec
-    setup_aiohttp_apispec(app=app, title="My Documentation", version="v1")
+    setup_flask_apispec(app=app, title="My Documentation", version="v1")
 
 
     # find it on 'http://localhost:8080/api/docs/api-docs'
@@ -67,7 +67,7 @@ Adding validation middleware
 
 .. code-block:: python
 
-    from aiohttp_apispec import validation_middleware
+    from flask_apispec import validation_middleware
 
     ...
 
@@ -91,11 +91,11 @@ Now you can access all validated data in route from ``request['data']`` like so:
          )
 
 You can change ``Request``'s ``'data'`` param to another
-with ``request_data_name`` argument of ``setup_aiohttp_apispec`` function:
+with ``request_data_name`` argument of ``setup_flask_apispec`` function:
 
 .. code-block:: python
 
-    setup_aiohttp_apispec(app=app,
+    setup_flask_apispec(app=app,
                           request_data_name='validated_data',
                           title='My Documentation',
                           version='v1',
@@ -178,7 +178,7 @@ have interface exactly like in examples below:
                 content_type="application/json",
             )
 
-    setup_aiohttp_apispec(app, error_callback=my_error_handler)
+    setup_flask_apispec(app, error_callback=my_error_handler)
 
 Also you can create your own exceptions and create
 regular Request in middleware like so:
@@ -209,7 +209,7 @@ regular Request in middleware like so:
             return web.json_response(e.message, status=400)
 
 
-    setup_aiohttp_apispec(app, error_callback=my_error_handler)
+    setup_flask_apispec(app, error_callback=my_error_handler)
 
     # Do not forget to add your own middleware before validation_middleware
     app.middlewares.extend([intercept_error, validation_middleware])
@@ -231,12 +231,12 @@ Build swagger web client
 *********************
 
 
-Just add ``swagger_path`` parameter to ``setup_aiohttp_apispec`` function.
+Just add ``swagger_path`` parameter to ``setup_flask_apispec`` function.
 
 For example:
 
 .. code-block:: python
-    setup_aiohttp_apispec(app, swagger_path="/docs")
+    setup_flask_apispec(app, swagger_path="/docs")
 
 Then go to ``/docs`` and see awesome SwaggerUI
 
@@ -244,17 +244,17 @@ Then go to ``/docs`` and see awesome SwaggerUI
 *********************
 
 ``aiohttp-apispec`` adds ``swagger_dict`` parameter to aiohttp
-web application after initialization (with ``setup_aiohttp_apispec`` function).
+web application after initialization (with ``setup_flask_apispec`` function).
 So you can use it easily with ``aiohttp_swagger`` library:
 
 .. code-block:: python
 
-    from aiohttp_apispec import setup_aiohttp_apispec
+    from flask_apispec import setup_flask_apispec
     from aiohttp_swagger import setup_swagger
 
 
     def create_app(app):
-        setup_aiohttp_apispec(app)
+        setup_flask_apispec(app)
 
         async def swagger(app):
             setup_swagger(

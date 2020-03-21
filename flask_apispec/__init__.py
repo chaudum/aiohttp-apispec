@@ -1,23 +1,23 @@
-from .aiohttp_apispec import AiohttpApiSpec, setup_aiohttp_apispec
 from .decorators import (
+    cookies_schema,
     docs,
-    request_schema,
+    form_schema,
+    headers_schema,
+    json_schema,
+    marshal_with,
     match_info_schema,
     querystring_schema,
-    form_schema,
-    json_schema,
-    headers_schema,
-    cookies_schema,
+    request_schema,
     response_schema,
     use_kwargs,
-    marshal_with,
 )
+from .flask_apispec import FlaskApiSpec, setup_flask_apispec
 from .middlewares import validation_middleware
 
 __all__ = [
     # setup
-    "AiohttpApiSpec",
-    "setup_aiohttp_apispec",
+    "FlaskApiSpec",
+    "setup_flask_apispec",
     # decorators
     "docs",
     "request_schema",

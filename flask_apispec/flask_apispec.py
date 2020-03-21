@@ -1,18 +1,16 @@
 import copy
 from pathlib import Path
-from typing import Awaitable, Callable
+from typing import Callable
+from functools import partial
 
-from aiohttp import web
-from aiohttp.hdrs import METH_ALL, METH_ANY
 from apispec import APISpec
 from apispec.core import VALID_METHODS_OPENAPI_V2
 from apispec.ext.marshmallow import MarshmallowPlugin, common
+from flask import Flask, make_response, jsonify, request, current_app
 from jinja2 import Template
-from webargs.aiohttpparser import parser
+from webargs.flaskparser import parser
 
-from .utils import get_path, get_path_keys, issubclass_py37fix
-
-_AiohttpView = Callable[[web.Request], Awaitable[web.StreamResponse]]
+from .utils import get_path, get_path_keys
 
 VALID_RESPONSE_FIELDS = {"description", "headers", "examples"}
 
@@ -27,7 +25,7 @@ def resolver(schema):
     return name
 
 
-class AiohttpApiSpec:
+class FlaskApiSpec:
     def __init__(
         self,
         url="/api/docs/swagger.json",
@@ -58,69 +56,60 @@ class AiohttpApiSpec:
         """ Returns swagger spec representation in JSON format """
         return self.spec.to_dict()
 
-    def register(self, app: web.Application, in_place: bool = False):
+    def register(self, app: Flask, in_place: bool = False):
         """ Creates spec based on registered app routes and registers needed view """
         if self._registered is True:
             return None
 
-        app["_apispec_request_data_name"] = self._request_data_name
+        app._apispec_request_data_name = self._request_data_name
 
         if self.error_callback:
             parser.error_callback = self.error_callback
-        app["_apispec_parser"] = parser
+        app._apispec_parser = parser
 
         if in_place:
             self._register(app)
         else:
-
-            async def doc_routes(app_):
-                self._register(app_)
-
-            app.on_startup.append(doc_routes)
+            app.before_first_request(partial(self._register, app))
 
         self._registered = True
 
         if self.url is not None:
-            async def swagger_handler(request):
-                return web.json_response(request.app["swagger_dict"])
 
-            app.router.add_route("GET", self.url, swagger_handler, name="swagger.spec")
+            def swagger_handler():
+                return current_app.swagger_dict
+
+            app.add_url_rule(self.url, "swagger.spec", swagger_handler, methods=["GET"])
 
             if self.swagger_path is not None:
                 self._add_swagger_web_page(app, self.static_path, self.swagger_path)
 
-    def _add_swagger_web_page(
-        self, app: web.Application, static_path: str, view_path: str
-    ):
+    def _add_swagger_web_page(self, app: Flask, static_path: str, view_path: str):
         static_files = Path(__file__).parent / "static"
-        app.router.add_static(static_path, static_files)
+        app.static_folder = str(static_files.resolve())
+        print(app.static_folder, app.static_url_path)
 
         with open(str(static_files / "index.html")) as swg_tmp:
             tmp = Template(swg_tmp.read()).render(path=self.url, static=static_path)
 
-        async def swagger_view(_):
-            return web.Response(text=tmp, content_type="text/html")
+        def swagger_view():
+            response = make_response(tmp)
+            response.headers["Content-Type"] = "text/html"
+            return response
 
-        app.router.add_route("GET", view_path, swagger_view, name="swagger.docs")
+        app.add_url_rule(view_path, "swagger.docs", swagger_view, methods=["GET"])
 
-    def _register(self, app: web.Application):
-        for route in app.router.routes():
-            if issubclass_py37fix(route.handler, web.View) and route.method == METH_ANY:
-                for attr in dir(route.handler):
-                    if attr.upper() in METH_ALL:
-                        view = getattr(route.handler, attr)
-                        method = attr
-                        self._register_route(route, method, view)
-            else:
-                method = route.method.lower()
-                view = route.handler
-                self._register_route(route, method, view)
-        app["swagger_dict"] = self.swagger_dict()
+    def _register(self, app: Flask):
+        for rule in app.url_map.iter_rules():
+            for method in rule.methods:
+                if method in {"OPTIONS", "HEAD"}:
+                    continue
+                view = app.view_functions[rule.endpoint]
+                print(method, rule)
+                self._register_route(rule, method.lower(), view)
+        app.swagger_dict = self.swagger_dict()
 
-    def _register_route(
-        self, route: web.AbstractRoute, method: str, view: _AiohttpView
-    ):
-
+    def _register_route(self, route, method: str, view: Callable):
         if not hasattr(view, "__apispec__"):
             return None
 
@@ -172,8 +161,8 @@ class AiohttpApiSpec:
         self.spec.path(path=url_path, operations={method: operations})
 
 
-def setup_aiohttp_apispec(
-    app: web.Application,
+def setup_flask_apispec(
+    app: Flask,
     *,
     title: str = "API documentation",
     version: str = "0.0.1",
@@ -187,13 +176,13 @@ def setup_aiohttp_apispec(
     **kwargs
 ) -> None:
     """
-    aiohttp-apispec extension.
+    flask-apispec extension.
 
     Usage:
 
     .. code-block:: python
 
-        from aiohttp_apispec import docs, request_schema, setup_aiohttp_apispec
+        from flask_apispec import docs, request_schema, setup_flask_apispec
         from aiohttp import web
         from marshmallow import Schema, fields
 
@@ -212,19 +201,19 @@ def setup_aiohttp_apispec(
             return web.json_response({'msg': 'done', 'data': {}})
 
 
-        app = web.Application()
+        app = Flask(__name__)
         app.router.add_post('/v1/test', index)
 
         # init docs with all parameters, usual for ApiSpec
-        setup_aiohttp_apispec(app=app,
-                              title='My Documentation',
-                              version='v1',
-                              url='/api/docs/api-docs')
+        setup_flask_apispec(app=app,
+                            title='My Documentation',
+                            version='v1',
+                            url='/api/docs/api-docs')
 
         # now we can find it on 'http://localhost:8080/api/docs/api-docs'
         web.run_app(app)
 
-    :param Application app: aiohttp web app
+    :param Flask app: Flask application instance
     :param str title: API title
     :param str version: API version
     :param str url: url for swagger spec in JSON format
@@ -242,7 +231,7 @@ def setup_aiohttp_apispec(
     :param prefix: prefix to add to all registered routes
     :param kwargs: any apispec.APISpec kwargs
     """
-    AiohttpApiSpec(
+    FlaskApiSpec(
         url,
         app,
         request_data_name,

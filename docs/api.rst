@@ -3,6 +3,6 @@
 API Reference
 =============
 
-.. automodule:: aiohttp_apispec
+.. automodule:: flask_apispec
    :members:
 
